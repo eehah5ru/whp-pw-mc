@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # require "childprocess"
 require 'fastimage'
 
@@ -33,15 +34,13 @@ end
 
 class ShellCmd < Command
   def run
-    @p = ChildProcess.build(shell_cmd, cmd_args)
-    @p.leader = true
-    @p.detach = true
-    @p.start
+    @p = Process.spawn(shell_cmd, cmd_args)
+    Process.detach @p
   end
 
   def stop
     return unless @p
-    @p.stop
+    Process.kill(:SIGINT, @p)
   end
 
   protected
@@ -64,6 +63,10 @@ class CopyKeyCmd < ShellCmd
     r << "( "
     r << "cd #{@whph_dir}"
     r << " && "
+    r << "vagrant plugin install vagrant-vbguest"
+    r << " && "
+    r << "vagrant plugin install vagrant-hostsupdater"
+    r << " && "
     r << "vagrant up slave"
     r << " && "
     r << "vagrant ssh slave -c 'cat ~/.ssh/id_rsa.pub'"
@@ -83,6 +86,10 @@ class StartCmd < ShellCmd
     r = "( "
     r << "cd #{@whph_dir}"
     r << " && "
+    r << "vagrant plugin install vagrant-vbguest"
+    r << " && "
+    r << "vagrant plugin install vagrant-hostsupdater"
+    r << " && "
     r << "vagrant up slave"
     r << " && "
     r << "vagrant ssh slave -c 'bash /vagrant/bin/whph-slave-site-watch.sh'"
@@ -99,6 +106,10 @@ class CleanCmd < ShellCmd
   def cmd_args
     r = "( "
     r << "cd #{@whph_dir}"
+    r << " && "
+    r << "vagrant plugin install vagrant-vbguest"
+    r << " && "
+    r << "vagrant plugin install vagrant-hostsupdater"
     r << " && "
     r << "vagrant ssh slave -c 'bash /vagrant/bin/whph-slave-site-clean.sh'"
     r << " ); exit"
@@ -147,9 +158,6 @@ end
 
 DIRS = Dirs.new
 
-bkg_picture_path = `find #{DIRS.pictures_dir} -type f`.split("\n").shuffle.first
-p_w, p_h = FastImage.size bkg_picture_path
-
 
 FILL_COLORS = (0xF3F..0xF90).to_a
 
@@ -162,17 +170,23 @@ module Helpers
   def self.quote_of_the_day
     File.read(`find #{DIRS.texts_dir} -name '*.md'`.split("\n").shuffle.first)
   end
+
+  def self.bkg_picture
+    r = `find #{DIRS.pictures_dir} -type f`.split("\n").shuffle.first
+    w, h = FastImage.size r
+
+    return r, w, h
+  end
 end
 
+
+main_bkg, main_w, main_h = Helpers.bkg_picture
+
 Shoes.app width: 800,
-  height: (p_h.to_f*800.0)/p_w.to_f,
+  height: (main_h.to_f*800.0)/main_w.to_f,
   title: "WHPH Master of Ceremony" do
 
-  debug p_w
-  debug p_h
-  # background "#F3F".."#F90"
-
-  background bkg_picture_path, height: (p_h.to_f*800.0)/p_w.to_f, width: 800
+  background main_bkg, height: (main_h.to_f*800.0)/main_w.to_f, width: 800
 
   @copy_key_cmd = CopyKeyCmd.new(DIRS.whph_dir, DIRS.current_dir)
   @start_cmd = StartCmd.new(DIRS.whph_dir, DIRS.current_dir)
@@ -201,13 +215,23 @@ Shoes.app width: 800,
 
     flow do
       banner (link("where am I?") {
-              window do
+              wtf_bkg, wtf_w, wtf_h = Helpers.bkg_picture
+
+              window width => 400 ,:height => (wtf_h.to_f*400.0)/wtf_w.to_f do
+                background wtf_bkg, height: (wtf_h.to_f*400.0)/wtf_w.to_f, width: 400
                 stack do
                   fill Helpers::random_color
-                  title "some useful things"
+                  title "some useful things before we start:"
 
                   fill Helpers::random_color
-                  para "aaa"
+                  para "please install ", link("VirtualBox"){`open 'https://www.virtualbox.org/wiki/Downloads'`}
+
+                  fill Helpers::random_color
+                  para "Если у тебя нет места на жестком диске ноутбука, поменяй в настройках virtualbox папку, где будут храниться твои виртуальные машины: ", code("Menu -> VirtualBox -> Preferences -> General -> Default Machine Folder"), ". Например, можно указать папку на внешнем жестком диске. Главное, чтобы у тебя было свободно где-то 10Гб."
+
+                  fill Helpers::random_color
+                  para "please install ", link("vagrant"){`open 'https://www.vagrantup.com/downloads.html'`}
+
                 end
               end
             })
@@ -262,7 +286,7 @@ Shoes.app width: 800,
       end
 
       fill Helpers::random_color
-      para "copy ssh key to clipboard"
+      para "Press to copy ssh key to clipboard.", link("Теперь отправь по электронной почте ssh-key Коле или Дине, чотобы они дали тебе доступ к файлам на сервере сайта РБОБ"){`open 'mailto:eeefff.org@gmail.com?subject=ssh-key-from-!!!!!&body=paste-your-ssh-key-here'`}
     end
 
     flow do
