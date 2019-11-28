@@ -79,6 +79,23 @@ end
 
 
 #
+# install vagrant plugins
+#
+class InstallPluginsCmd < ShellCmd
+  def cmd_args
+    r = "( "
+    r << "cd #{@whph_dir}"
+    r << " && "
+    r << "vagrant plugin install vagrant-vbguest"
+    r << " && "
+    r << "vagrant plugin install vagrant-hostsupdater"
+    r << " ); exit"
+
+    return r
+  end
+end
+
+#
 # start local copy o the website
 #
 class StartCmd < ShellCmd
@@ -152,7 +169,7 @@ class Dirs
 
 
   def current_dir
-    return File.expand_path(File.dirname(__FILE__))
+    return whph_dir #Dir.getwd #File.expand_path(File.dirname(__FILE__))
   end
 end
 
@@ -189,6 +206,7 @@ Shoes.app width: 800,
   background main_bkg, height: (main_h.to_f*800.0)/main_w.to_f, width: 800
 
   @copy_key_cmd = CopyKeyCmd.new(DIRS.whph_dir, DIRS.current_dir)
+  @install_plugins_cmd = InstallPluginsCmd.new(DIRS.whph_dir, DIRS.current_dir)
   @start_cmd = StartCmd.new(DIRS.whph_dir, DIRS.current_dir)
   @clean_cmd = CleanCmd.new(DIRS.whph_dir, DIRS.current_dir)
   @stop_cmd = StopCmd.new(DIRS.whph_dir, DIRS.current_dir)
@@ -214,7 +232,7 @@ Shoes.app width: 800,
     fill Helpers::random_color
 
     flow do
-      banner (link("where am I?") {
+      banner (link("where am I? (Click'n'Read before start)") {
               wtf_bkg, wtf_w, wtf_h = Helpers.bkg_picture
 
               window width => 400 ,:height => (wtf_h.to_f*400.0)/wtf_w.to_f do
