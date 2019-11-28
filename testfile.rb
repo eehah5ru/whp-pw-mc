@@ -40,7 +40,11 @@ class ShellCmd < Command
 
   def stop
     return unless @p
-    Process.kill(:SIGINT, @p)
+    begin
+      Process.kill(:SIGINT, @p)
+    rescue Errno::ESRCH
+      STDERR.puts "#{self.class.name} already killed"
+    end
   end
 
   protected
@@ -71,6 +75,7 @@ class CopyKeyCmd < ShellCmd
     r << " && "
     r << "vagrant ssh slave -c 'cat ~/.ssh/id_rsa.pub'"
     r << " | pbcopy"
+    r << "| osascript -e 'display notification \"SSH Key was copied to clipboard!\" with title \"WHPH MC\"'"
     r << " ); exit"
 
     return r
@@ -233,26 +238,26 @@ Shoes.app width: 800,
 
     flow do
       banner (link("where am I? (Click'n'Read before start)") {
-              wtf_bkg, wtf_w, wtf_h = Helpers.bkg_picture
+                wtf_bkg, wtf_w, wtf_h = Helpers.bkg_picture
 
-              window width => 400 ,:height => (wtf_h.to_f*400.0)/wtf_w.to_f do
-                background wtf_bkg, height: (wtf_h.to_f*400.0)/wtf_w.to_f, width: 400
-                stack do
-                  fill Helpers::random_color
-                  title "some useful things before we start:"
+                window width => 400 ,:height => (wtf_h.to_f*400.0)/wtf_w.to_f do
+                  background wtf_bkg, height: (wtf_h.to_f*400.0)/wtf_w.to_f, width: 400
+                  stack do
+                    fill Helpers::random_color
+                    title "some useful things before we start:"
 
-                  fill Helpers::random_color
-                  para "please install ", link("VirtualBox"){`open 'https://www.virtualbox.org/wiki/Downloads'`}
+                    fill Helpers::random_color
+                    para "please install ", link("VirtualBox"){`open 'https://www.virtualbox.org/wiki/Downloads'`}
 
-                  fill Helpers::random_color
-                  para "Если у тебя нет места на жестком диске ноутбука, поменяй в настройках virtualbox папку, где будут храниться твои виртуальные машины: ", code("Menu -> VirtualBox -> Preferences -> General -> Default Machine Folder"), ". Например, можно указать папку на внешнем жестком диске. Главное, чтобы у тебя было свободно где-то 10Гб."
+                    fill Helpers::random_color
+                    para "Если у тебя нет места на жестком диске ноутбука, поменяй в настройках virtualbox папку, где будут храниться твои виртуальные машины: ", code("Menu -> VirtualBox -> Preferences -> General -> Default Machine Folder"), ". Например, можно указать папку на внешнем жестком диске. Главное, чтобы у тебя было свободно где-то 10Гб."
 
-                  fill Helpers::random_color
-                  para "please install ", link("vagrant"){`open 'https://www.vagrantup.com/downloads.html'`}
+                    fill Helpers::random_color
+                    para "please install ", link("vagrant"){`open 'https://www.vagrantup.com/downloads.html'`}
 
+                  end
                 end
-              end
-            })
+              })
     end
 
     flow do
@@ -266,6 +271,19 @@ Shoes.app width: 800,
 
       fill Helpers::random_color
       para "start whph local website"
+    end
+
+    flow do
+      @open_in_browser = button "Open in browser" do
+        debug "open in browser: running"
+
+        r = `open http://work-hard.test:8001/ru/2019/`
+
+        debug "open in browser: done"
+      end
+
+      fill Helpers::random_color
+      para "Open LOCAL TEST WEBSITE in browser"
     end
 
     flow do
@@ -304,6 +322,7 @@ Shoes.app width: 800,
       end
 
       fill Helpers::random_color
+      
       para "Press to copy ssh key to clipboard.", link("Теперь отправь по электронной почте ssh-key Коле или Дине, чотобы они дали тебе доступ к файлам на сервере сайта РБОБ"){`open 'mailto:eeefff.org@gmail.com?subject=ssh-key-from-!!!!!&body=paste-your-ssh-key-here'`}
     end
 
