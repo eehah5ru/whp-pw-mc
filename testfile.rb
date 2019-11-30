@@ -32,14 +32,49 @@ class Command
   end
 end
 
+
+#
+# shell command
+#
 class ShellCmd < Command
+  #
+  # save instance of the command to kill them if it's needed
+  #
+  def self.register_instance a_cmd
+    @cmds = [] unless @cmds
+
+    @cmds << a_cmd
+  end
+
+  #
+  # stop all existing shell commands' processes
+  #
+  def self.stop_them_all
+    return unless @cmds
+
+    @cmds.each { |c|
+      c.stop
+    }
+  end
+
+  
+  def initialize whph_dir, current_dir
+    ShellCmd.register_instance self
+    
+    super whph_dir, current_dir
+  end
+  
   def run
     @p = Process.spawn(shell_cmd, cmd_args)
     Process.detach @p
   end
 
+  #
+  # kill child process
+  #
   def stop
     return unless @p
+    
     begin
       Process.kill(:SIGINT, @p)
     rescue Errno::ESRCH
@@ -67,10 +102,6 @@ class CopyKeyCmd < ShellCmd
     r << "( "
     r << "cd #{@whph_dir}"
     r << " && "
-    r << "vagrant plugin install vagrant-vbguest"
-    r << " && "
-    r << "vagrant plugin install vagrant-hostsupdater"
-    r << " && "
     r << "vagrant up slave"
     r << " && "
     r << "vagrant ssh slave -c 'cat ~/.ssh/id_rsa.pub'"
@@ -84,9 +115,12 @@ end
 
 
 #
-# install vagrant plugins
+# setup vagrant environment
 #
-class InstallPluginsCmd < ShellCmd
+class SetupVagrantCmd < ShellCmd
+
+  protected
+  
   def cmd_args
     r = "( "
     r << "cd #{@whph_dir}"
@@ -94,6 +128,8 @@ class InstallPluginsCmd < ShellCmd
     r << "vagrant plugin install vagrant-vbguest"
     r << " && "
     r << "vagrant plugin install vagrant-hostsupdater"
+    r << " && "
+    r << " vagrant up slave"
     r << " ); exit"
 
     return r
@@ -107,10 +143,6 @@ class StartCmd < ShellCmd
   def cmd_args
     r = "( "
     r << "cd #{@whph_dir}"
-    r << " && "
-    r << "vagrant plugin install vagrant-vbguest"
-    r << " && "
-    r << "vagrant plugin install vagrant-hostsupdater"
     r << " && "
     r << "vagrant up slave"
     r << " && "
@@ -128,10 +160,6 @@ class CleanCmd < ShellCmd
   def cmd_args
     r = "( "
     r << "cd #{@whph_dir}"
-    r << " && "
-    r << "vagrant plugin install vagrant-vbguest"
-    r << " && "
-    r << "vagrant plugin install vagrant-hostsupdater"
     r << " && "
     r << "vagrant ssh slave -c 'bash /vagrant/bin/whph-slave-site-clean.sh'"
     r << " ); exit"
@@ -178,12 +206,21 @@ class Dirs
   end
 end
 
+#
+# dirs collection
+#
 DIRS = Dirs.new
 
 
+#
+# colors for GUI
+#
 FILL_COLORS = (0xF3F..0xF90).to_a
 
 
+#
+# GUI HELPERS
+#
 module Helpers
   def self.random_color
     "#" + FILL_COLORS.shuffle.first.to_s(16)
@@ -202,8 +239,20 @@ module Helpers
 end
 
 
+#
+#
+# SHOES APP
+#
+#
+
+#
+# get bkg picture and window width and height
+#
 main_bkg, main_w, main_h = Helpers.bkg_picture
 
+#
+# the app
+#
 Shoes.app width: 800,
   height: (main_h.to_f*800.0)/main_w.to_f,
   title: "WHPH Master of Ceremony" do
@@ -211,7 +260,6 @@ Shoes.app width: 800,
   background main_bkg, height: (main_h.to_f*800.0)/main_w.to_f, width: 800
 
   @copy_key_cmd = CopyKeyCmd.new(DIRS.whph_dir, DIRS.current_dir)
-  @install_plugins_cmd = InstallPluginsCmd.new(DIRS.whph_dir, DIRS.current_dir)
   @start_cmd = StartCmd.new(DIRS.whph_dir, DIRS.current_dir)
   @clean_cmd = CleanCmd.new(DIRS.whph_dir, DIRS.current_dir)
   @stop_cmd = StopCmd.new(DIRS.whph_dir, DIRS.current_dir)
@@ -249,11 +297,33 @@ Shoes.app width: 800,
                     fill Helpers::random_color
                     para "please install ", link("VirtualBox"){`open 'https://www.virtualbox.org/wiki/Downloads'`}
 
+                    #
+                    # move VBox machines to external drive
+                    #
                     fill Helpers::random_color
                     para "Если у тебя нет места на жестком диске ноутбука, поменяй в настройках virtualbox папку, где будут храниться твои виртуальные машины: ", code("Menu -> VirtualBox -> Preferences -> General -> Default Machine Folder"), ". Например, можно указать папку на внешнем жестком диске. Главное, чтобы у тебя было свободно где-то 10Гб."
 
+                    #
+                    # install vagrant
+                    #
                     fill Helpers::random_color
                     para "please install ", link("vagrant"){`open 'https://www.vagrantup.com/downloads.html'`}
+
+                    #
+                    # setup button
+                    #
+                    flow do
+                      button "Setup" do
+                        debug "setup: running"
+
+                          SetupVagrantCmd.new(DIRS.whph_dir, DIRS.current_dir).run
+
+                        debug "setup: done"
+                      end
+
+                      fill Helpers::random_color
+                      para "Setup whph local website. Run it only once in the very beginning"
+                    end
 
                   end
                 end
@@ -277,7 +347,7 @@ Shoes.app width: 800,
       @open_in_browser = button "Open in browser" do
         debug "open in browser: running"
 
-        r = `open http://work-hard.test:8001/ru/2019/`
+        r = `open http://work-hard.test:8001/ru/2018/`
 
         debug "open in browser: done"
       end
@@ -330,10 +400,7 @@ Shoes.app width: 800,
       button "kill'em all!" do
         debug "kill: running"
 
-        @copy_key_cmd.stop
-        @start_cmd.stop
-        @stop_cmd.stop
-        @clean_cmd.stop
+        ShellCmd.stop_them_all
 
         debug "kill: done"
       end
