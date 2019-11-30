@@ -231,7 +231,7 @@ module Helpers
   end
 
   def self.bkg_picture
-    r = `find #{DIRS.pictures_dir} -type f`.split("\n").shuffle.first
+    r = `find #{DIRS.pictures_dir} -type f | grep -v DS_Store`.split("\n").shuffle.first
     w, h = FastImage.size r
 
     return r, w, h
