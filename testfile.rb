@@ -154,6 +154,23 @@ class StartCmd < ShellCmd
 end
 
 #
+# start syncing
+#
+class SyncFilesCmd < ShellCmd
+  def cmd_args
+    r = "( "
+    r << "cd #{@whph_dir}"
+    r << " && "
+    r << "vagrant up slave"
+    r << " && "
+    r << "vagrant rsync-auto slave"
+    r << " ); exit"
+
+    return r    
+  end
+end
+
+#
 # start local copy o the website
 #
 class CleanCmd < ShellCmd
@@ -331,7 +348,7 @@ Shoes.app width: 800,
     end
 
     flow do
-      @start = button "Start!"  do
+      @start = button "Start Server"  do
         debug "start: running"
 
         @start_cmd.run
@@ -341,6 +358,19 @@ Shoes.app width: 800,
 
       fill Helpers::random_color
       para "start whph local website"
+    end
+
+    flow do
+      button "Syncing files" do
+        debug "syncing: running"
+
+        SyncFilesCmd.new(DIRS.whph_dir, DIRS.current_dir).run
+
+        debug "syncing: done"
+      end
+
+      fill Helpers::random_color
+      para "start syncing your changes with local server"
     end
 
     flow do
