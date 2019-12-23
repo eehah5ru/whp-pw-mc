@@ -1,0 +1,14 @@
+* bugs
+** TODO github submodule update before server start
+** TODO site clean: stop server before and the vagrant up and clean
+** add restart button
+** DONE slimrb is missing
+   CLOSED: [2019-11-30 Sat 11:15]
+* gui
+** DONE button: Install plugins
+   CLOSED: [2019-11-30 Sat 12:11]
+*** extract plugins installation into separate command
+** DONE open in browser button -> open http://work-hard.test:8001/
+   CLOSED: [2019-11-30 Sat 11:14]
+* how-to page
+** the app can ask for passwords to enter. so please take a look into terminal windows thata are open
