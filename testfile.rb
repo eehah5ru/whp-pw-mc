@@ -196,7 +196,9 @@ class StopCmd < ShellCmd
     r << "cd #{@whph_dir}"
     r << " && "
     r << "vagrant halt slave"
-    r << " ); exit"
+    r << " && "
+    r << "( kill $(ps aux | grep 'vagrant' | awk '{print $2}') )"
+    r << " ) ; exit"
 
     return r
   end
