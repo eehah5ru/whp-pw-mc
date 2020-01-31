@@ -1,6 +1,6 @@
 # WHPH Master of Ceremony
 
-gui for editing/testing whph website content locally using vagrant to absctract from os
+GUI for editing/testing whph website content locally using vagrant to absctract from os
 
 ## User Guide
 
@@ -11,7 +11,7 @@ WHPH-MC is an application dedicated to hide messy infrastructural things while y
 ### Install requirements
 
 - install [Virtual Box](https://www.virtualbox.org/wiki/Downloads).
-- change VM folder to external drive in settings of VirtualBox if needed. It depends on the amount of free space on your internal hard drive.
+- change virtual machines folder to external drive in preferences of VirtualBox if needed. It depends on the amount of free space on your internal hard drive.
 - install [vagrant](https://www.vagrantup.com/docs/installation/).
 - [download](https://www.oracle.com/technetwork/java/javase/downloads/index.html) and install latest JDK: extract archive and copy to `/Library/Java/JavaVirtualMachines`
 - update JDK Home: `cd /Library/Java/JavaVirtualMachines; ln -s /Library/Java/JavaVirtualMachines/<name-of-jdk-archive>/Contents/Home`
