@@ -21,11 +21,11 @@ WHPH-MC is an application dedicated to hide messy infrastructural things while y
 
 Start the app as usual app. After a while a dialog will appear asking you to specify your working WHPH directory (that contains all files you're working on)
 
-![](/Volumes/qz1_now/Users/eehah5ru/it/websites/whph-pw-mc/images/user-guide-1.gif)
+![](images/user-guide-1.gif)
 
 ### Interface overview
 
-![user-guide-2](/Volumes/qz1_now/Users/eehah5ru/it/websites/whph-pw-mc/images/user-guide-2.png)
+![user-guide-2](images/user-guide-2.png)
 
 #### Where am I -> Setup
 
