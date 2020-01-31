@@ -40,7 +40,7 @@ gems:
 # -----------------------------------------------------------------------------
 
 # The app's version number
-version: 0.0.3
+version: 0.0.5
 
 # The name of this release
 release: aaa
