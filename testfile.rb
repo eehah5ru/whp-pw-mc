@@ -122,15 +122,17 @@ class SetupVagrantCmd < ShellCmd
   protected
   
   def cmd_args
-    r = "( "
+    r = "( ( "
     r << "cd #{@whph_dir}"
     r << " && "
     r << "vagrant plugin install vagrant-vbguest"
     r << " && "
     r << "vagrant plugin install vagrant-hostsupdater"
     r << " && "
-    r << " vagrant up slave"
-    r << " ); exit"
+    r << "vagrant up slave"
+    r << " && "    
+    r << " vagrant provision slave" 
+    r << " ) || read -p 'Take a screenshot and press enter to continue' ); exit"
 
     return r
   end
@@ -141,13 +143,13 @@ end
 #
 class StartCmd < ShellCmd
   def cmd_args
-    r = "( "
+    r = "( ( "
     r << "cd #{@whph_dir}"
     r << " && "
     r << "vagrant up slave"
     r << " && "
     r << "vagrant ssh slave -c 'bash /vagrant/bin/whph-slave-site-watch.sh'"
-    r << " ); exit"
+    r << " ) || read -p 'Take a screenshot and press enter to continue' ); exit"
 
     return r
   end
@@ -158,13 +160,13 @@ end
 #
 class SyncFilesCmd < ShellCmd
   def cmd_args
-    r = "( "
+    r = "( ( "
     r << "cd #{@whph_dir}"
     r << " && "
     r << "vagrant up slave"
     r << " && "
     r << "vagrant rsync-auto slave"
-    r << " ); exit"
+    r << " ) || read -p 'Take a screenshot and press enter to continue' ) ; exit"
 
     return r    
   end
@@ -175,14 +177,38 @@ end
 #
 class CleanCmd < ShellCmd
   def cmd_args
-    r = "( "
+    r = "( ( "
     r << "cd #{@whph_dir}"
     r << " && "
     r << "vagrant ssh slave -c 'bash /vagrant/bin/whph-slave-site-clean.sh'"
-    r << " ); exit"
+    r << " ) || read -p 'Take a screenshot and press enter to continue' ) ; exit"
 
     return r
   end
+end
+
+#
+# kill server, clean and start again
+#
+class KillCleanStartCmd < ShellCmd
+  def cmd_args
+    r = "( ( "
+    r << "cd #{@whph_dir}"
+    r << " && "
+    # kill all site processes
+    r << "vagrant ssh slave -c 'killall -9 site'"
+    r << " && "
+    # clean hakyll
+    r << "vagrant ssh slave -c 'bash /vagrant/bin/whph-slave-site-clean.sh'"
+    r << " && "
+    # start hakyll again
+    r << "vagrant ssh slave -c 'bash /vagrant/bin/whph-slave-site-watch.sh'"
+    # exit to close terminal window
+    r << " ) || read -p 'Take a screenshot and press enter to continue' ) ; exit"
+    
+    return r 
+  end
+  
 end
 
 #
@@ -192,13 +218,13 @@ class StopCmd < ShellCmd
   protected
 
   def cmd_args
-    r = " ( "
+    r = "( ( "
     r << "cd #{@whph_dir}"
     r << " && "
     r << "vagrant halt slave"
     r << " && "
     r << "( kill $(ps aux | grep 'vagrant' | awk '{print $2}') )"
-    r << " ) ; exit"
+    r << " ) || read -p 'Take a screenshot and press enter to continue' ) ; exit"
 
     return r
   end
@@ -281,6 +307,7 @@ Shoes.app width: 800,
   @copy_key_cmd = CopyKeyCmd.new(DIRS.whph_dir, DIRS.current_dir)
   @start_cmd = StartCmd.new(DIRS.whph_dir, DIRS.current_dir)
   @clean_cmd = CleanCmd.new(DIRS.whph_dir, DIRS.current_dir)
+  @kill_clean_start_cmd = KillCleanStartCmd.new(DIRS.whph_dir, DIRS.current_dir)  
   @stop_cmd = StopCmd.new(DIRS.whph_dir, DIRS.current_dir)
 
   # @arrow = arrow 150, 200, 100 do
@@ -402,10 +429,10 @@ Shoes.app width: 800,
     end
 
     flow do
-      @clean = button "Clean!"  do
+      @clean = button "Clean & Start Again"  do
         debug "clean: running"
 
-        @clean_cmd.run
+        @kill_clean_start_cmd.run
 
         debug "clean: done"
       end
